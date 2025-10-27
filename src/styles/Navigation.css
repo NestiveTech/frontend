@@ -1,0 +1,31 @@
+/* src/styles/Navigation.css */
+.nav {
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 10px 0;
+}
+
+.nav-container {
+  display: flex;
+  gap: 10px;
+}
+
+.nav-btn {
+  padding: 10px 20px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.nav-btn:hover {
+  background: #f1f5f9;
+}
+
+.nav-btn.active {
+  background: #2563eb;
+  color: white;
+}

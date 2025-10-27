@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import Dashboard from './components/Dashboard';
 import Transactions from './components/Transactions';
@@ -9,11 +9,6 @@ const API_BASE_URL = process.env.REACT_APP_GOOGLE_APPS_SCRIPT_URL;
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
 function App() {
-  // Debug environment variables
-  console.log('🔍 Environment Check:');
-  console.log('API_BASE_URL:', API_BASE_URL);
-  console.log('GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID);
-  
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [hasSpreadsheet, setHasSpreadsheet] = useState(false);
@@ -22,16 +17,13 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [userBanks, setUserBanks] = useState([]);
   
-  // API Call Function
+  // API Call Function - FIXED
   const apiCall = async (action, params = {}, emailOverride = null) => {
-    if (!API_BASE_URL) {
-      throw new Error('REACT_APP_GOOGLE_APPS_SCRIPT_URL is not configured in .env file');
-    }
-    
     const url = new URL(API_BASE_URL);
     url.searchParams.set('action', action);
     url.searchParams.set('_t', Date.now());
     
+    // Use emailOverride if provided, otherwise use currentUser
     const email = emailOverride || (currentUser ? currentUser.email : null);
     if (email) {
       url.searchParams.set('userEmail', email);
@@ -60,7 +52,7 @@ function App() {
       return data;
     } catch (error) {
       console.error(`❌ API Error (${action}):`, error);
-      throw error;
+      throw new Error(`Network error: ${error.message}`);
     }
   };
   
@@ -87,13 +79,15 @@ function App() {
       picture: payload.picture
     };
     
-    console.log('✅ User authenticated:', user.email);
+    console.log('%c✅ User authenticated', 'color: #16a34a; font-weight: bold;', user.email);
     
     setCurrentUser(user);
     setIsAuthenticated(true);
     
+    // Check user setup
     setLoading(true);
     try {
+      // Pass email as third parameter since currentUser isn't set yet
       const r = await apiCall('checkUser', {}, user.email);
       
       if (r.success) {
@@ -102,6 +96,7 @@ function App() {
           if (r.sheetUrl) {
             setSpreadsheetUrl(r.sheetUrl);
           }
+          // Load initial data
           await loadBanks(user.email);
         } else {
           setHasSpreadsheet(false);
@@ -167,50 +162,6 @@ function App() {
     }
   };
   
-  // Check if environment variables are configured
-  if (!API_BASE_URL || !GOOGLE_CLIENT_ID) {
-    return (
-      <div style={{ 
-        padding: '3rem', 
-        textAlign: 'center',
-        fontFamily: 'Arial, sans-serif',
-        maxWidth: '600px',
-        margin: '50px auto'
-      }}>
-        <div style={{
-          background: '#fff3cd',
-          border: '1px solid #ffc107',
-          borderRadius: '8px',
-          padding: '2rem'
-        }}>
-          <h2 style={{ color: '#856404', marginBottom: '1rem' }}>
-            ⚠️ Configuration Required
-          </h2>
-          <p style={{ color: '#856404', marginBottom: '1rem' }}>
-            Please configure your environment variables:
-          </p>
-          <ol style={{ textAlign: 'left', color: '#856404', lineHeight: '2' }}>
-            <li>Create a <code>.env</code> file in the <code>frontend</code> directory</li>
-            <li>Add the following lines:
-              <pre style={{
-                background: '#f8f9fa',
-                padding: '1rem',
-                borderRadius: '4px',
-                marginTop: '0.5rem',
-                overflow: 'auto',
-                textAlign: 'left'
-              }}>
-{`REACT_APP_GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com
-REACT_APP_GOOGLE_APPS_SCRIPT_URL=https://script.google.com/macros/s/YOUR_ID/exec`}
-              </pre>
-            </li>
-            <li>Restart the development server (<code>npm start</code>)</li>
-          </ol>
-        </div>
-      </div>
-    );
-  }
-  
   // Login Screen
   if (!isAuthenticated) {
     return (
@@ -256,7 +207,7 @@ REACT_APP_GOOGLE_APPS_SCRIPT_URL=https://script.google.com/macros/s/YOUR_ID/exec
     );
   }
   
-  // Setup Screen
+  // Setup Screen (No Spreadsheet)
   if (!hasSpreadsheet) {
     return (
       <div className="app-screen">
@@ -303,6 +254,7 @@ REACT_APP_GOOGLE_APPS_SCRIPT_URL=https://script.google.com/macros/s/YOUR_ID/exec
   // Main App
   return (
     <div className="app-screen">
+      {/* Header */}
       <header className="header">
         <div className="container header-content">
           <div className="header-left">
@@ -325,6 +277,7 @@ REACT_APP_GOOGLE_APPS_SCRIPT_URL=https://script.google.com/macros/s/YOUR_ID/exec
         </div>
       </header>
       
+      {/* Navigation */}
       <nav className="nav">
         <div className="container nav-container">
           <button 
@@ -359,6 +312,7 @@ REACT_APP_GOOGLE_APPS_SCRIPT_URL=https://script.google.com/macros/s/YOUR_ID/exec
         </div>
       </nav>
       
+      {/* Loading Overlay */}
       {loading && (
         <div className="loading-overlay">
           <div className="spinner"></div>
@@ -366,6 +320,7 @@ REACT_APP_GOOGLE_APPS_SCRIPT_URL=https://script.google.com/macros/s/YOUR_ID/exec
         </div>
       )}
       
+      {/* Pages */}
       <div className="container">
         {currentPage === 'dashboard' && (
           <Dashboard 
