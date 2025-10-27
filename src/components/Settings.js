@@ -106,7 +106,51 @@ const Settings = ({ currentUser, apiCall, userBanks, loadBanks, spreadsheetUrl, 
               }}
             />
           </div>
-          
+          {/* NEW: Cash Monthly Input Section */}
+<div style={{
+  background: 'linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%)',
+  padding: '1.5rem',
+  borderRadius: '8px',
+  marginBottom: '1rem',
+  border: '2px solid #fdcb6e'
+}}>
+  <label style={{
+    display: 'block',
+    marginBottom: '0.5rem',
+    fontWeight: '700',
+    fontSize: '1.1rem',
+    color: '#2d3436'
+  }}>
+    💰 Cash - Monthly Input
+  </label>
+  <input
+    type="number"
+    step="0.01"
+    value={settings.monthly_input_cash || ''}
+    onChange={e => setSettings({
+      ...settings,
+      monthly_input_cash: e.target.value
+    })}
+    placeholder="Enter monthly cash amount (e.g., 5000.00)"
+    style={{
+      width: '100%',
+      padding: '0.875rem',
+      borderRadius: '8px',
+      border: '2px solid #2d3436',
+      fontSize: '1rem',
+      fontWeight: '600'
+    }}
+  />
+  <small style={{
+    display: 'block',
+    marginTop: '0.5rem',
+    color: '#2d3436',
+    fontSize: '0.875rem'
+  }}>
+    ⭐ Cash is always available and cannot be deleted
+  </small>
+</div>
+
           {userBanks.map(bank => (
             <div key={bank.code} style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
