@@ -16,10 +16,11 @@ function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [loading, setLoading] = useState(false);
   const [userBanks, setUserBanks] = useState([]);
+  const [menuOpen, setMenuOpen] = useState(false);
   
   const apiCall = async (action, params = {}, emailOverride = null) => {
     if (!API_BASE_URL) {
-      throw new Error('REACT_APP_GOOGLE_APPS_SCRIPT_URL is not configured in .env file');
+      throw new Error('REACT_APP_GOOGLE_APPS_SCRIPT_URL is not configured');
     }
     
     const url = new URL(API_BASE_URL);
@@ -37,21 +38,17 @@ function App() {
       }
     });
     
-    console.log(`📡 API: ${action}`);
-    
     try {
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        redirect: 'follow'
+      const response = await fetch(url.toString(), { 
+        method: 'GET', 
+        redirect: 'follow' 
       });
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
       
-      const data = await response.json();
-      console.log(`✅ Response: ${action}`, data);
-      return data;
+      return await response.json();
     } catch (error) {
       console.error(`❌ API Error (${action}):`, error);
       throw error;
@@ -62,9 +59,9 @@ function App() {
     const base64Url = token.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const jsonPayload = decodeURIComponent(
-      atob(base64).split('').map(c => {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join('')
+      atob(base64).split('').map(c => 
+        '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+      ).join('')
     );
     return JSON.parse(jsonPayload);
   };
@@ -79,28 +76,23 @@ function App() {
       picture: payload.picture
     };
     
-    console.log('✅ User authenticated:', user.email);
-    
     setCurrentUser(user);
     setIsAuthenticated(true);
-    
     setLoading(true);
+    
     try {
       const r = await apiCall('checkUser', {}, user.email);
       
       if (r.success) {
         if (r.hasSpreadsheet) {
           setHasSpreadsheet(true);
-          if (r.sheetUrl) {
-            setSpreadsheetUrl(r.sheetUrl);
-          }
+          if (r.sheetUrl) setSpreadsheetUrl(r.sheetUrl);
           await loadBanks(user.email);
         } else {
           setHasSpreadsheet(false);
         }
       }
     } catch (e) {
-      console.error('Check error:', e);
       alert('Failed to check user setup: ' + e.message);
     } finally {
       setLoading(false);
@@ -113,18 +105,15 @@ function App() {
       const r = await apiCall('createSpreadsheet');
       
       if (r.success) {
-        alert('✅ ' + (r.message || 'Spreadsheet created successfully!'));
+        alert('✅ Spreadsheet created successfully!');
         setHasSpreadsheet(true);
-        if (r.sheetUrl) {
-          setSpreadsheetUrl(r.sheetUrl);
-        }
+        if (r.sheetUrl) setSpreadsheetUrl(r.sheetUrl);
         await loadBanks();
       } else {
         alert('❌ ' + (r.error || 'Failed to create spreadsheet'));
       }
     } catch (e) {
-      console.error('Create error:', e);
-      alert('❌ Failed to create spreadsheet: ' + e.message);
+      alert('❌ Failed: ' + e.message);
     } finally {
       setLoading(false);
     }
@@ -153,20 +142,33 @@ function App() {
       setSpreadsheetUrl('');
       setUserBanks([]);
       setCurrentPage('dashboard');
+      setMenuOpen(false);
     }
+  };
+  
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    setMenuOpen(false);
   };
   
   if (!API_BASE_URL || !GOOGLE_CLIENT_ID) {
     return (
-      <div style={{ padding: '3rem', textAlign: 'center', fontFamily: 'Arial, sans-serif', maxWidth: '600px', margin: '50px auto' }}>
-        <div style={{ background: '#fff3cd', border: '1px solid #ffc107', borderRadius: '8px', padding: '2rem' }}>
-          <h2 style={{ color: '#856404', marginBottom: '1rem' }}>⚠️ Configuration Required</h2>
-          <p style={{ color: '#856404', marginBottom: '1rem' }}>Please configure your environment variables:</p>
-          <ol style={{ textAlign: 'left', color: '#856404', lineHeight: '2' }}>
-            <li>Create a <code>.env</code> file in the root directory</li>
-            <li>Add your Google Client ID and Apps Script URL</li>
-            <li>Restart the development server (<code>npm start</code>)</li>
-          </ol>
+      <div style={{ 
+        padding: '3rem', 
+        textAlign: 'center', 
+        maxWidth: '600px', 
+        margin: '50px auto' 
+      }}>
+        <div style={{ 
+          background: '#fff3cd', 
+          border: '1px solid #ffc107', 
+          borderRadius: '8px', 
+          padding: '2rem' 
+        }}>
+          <h2 style={{ color: '#856404' }}>⚠️ Configuration Required</h2>
+          <p style={{ color: '#856404' }}>
+            Please add environment variables to .env file
+          </p>
         </div>
       </div>
     );
@@ -225,7 +227,6 @@ function App() {
             <h1>Welcome to Balance Sheet Manager!</h1>
             <p className="setup-description">
               We need to create your personal Google Sheet to store your financial data.
-              This sheet will be created in your Google Drive and only you will have access to it.
             </p>
             
             {loading ? (
@@ -234,7 +235,10 @@ function App() {
                 <p>Creating your spreadsheet...</p>
               </div>
             ) : (
-              <button onClick={handleCreateSpreadsheet} className="btn btn-primary btn-lg">
+              <button 
+                onClick={handleCreateSpreadsheet} 
+                className="btn btn-primary btn-lg"
+              >
                 📊 Create My Spreadsheet
               </button>
             )}
@@ -261,6 +265,7 @@ function App() {
   
   return (
     <div className="app-screen">
+      {/* Header with Hamburger */}
       <header className="header">
         <div className="container header-content">
           <div className="header-left">
@@ -270,20 +275,110 @@ function App() {
           
           <div className="header-right">
             <div className="user-info">
-              <img src={currentUser.picture} alt={currentUser.name} className="user-avatar" />
+              <img 
+                src={currentUser.picture} 
+                alt={currentUser.name} 
+                className="user-avatar" 
+              />
               <div className="user-details">
                 <div className="user-name">{currentUser.name}</div>
                 <div className="user-email">{currentUser.email}</div>
               </div>
             </div>
-            <button onClick={handleSignOut} className="btn btn-danger btn-sm">
+            
+            {/* Hamburger Menu Button */}
+            <button 
+              className="hamburger-btn"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Toggle menu"
+            >
+              <span className={`hamburger-icon ${menuOpen ? 'open' : ''}`}>
+                <span></span>
+                <span></span>
+                <span></span>
+              </span>
+            </button>
+            
+            <button 
+              onClick={handleSignOut} 
+              className="btn btn-danger btn-sm desktop-only"
+            >
               Sign Out
             </button>
           </div>
         </div>
       </header>
       
-      <nav className="nav">
+      {/* Mobile Menu Overlay */}
+      {menuOpen && (
+        <div 
+          className="menu-overlay" 
+          onClick={() => setMenuOpen(false)}
+        ></div>
+      )}
+      
+      {/* Mobile Slide-out Menu */}
+      <nav className={`mobile-nav ${menuOpen ? 'open' : ''}`}>
+        <div className="mobile-nav-header">
+          <h3>Menu</h3>
+          <button 
+            className="close-btn" 
+            onClick={() => setMenuOpen(false)}
+          >
+            ✕
+          </button>
+        </div>
+        
+        <div className="mobile-nav-items">
+          <button 
+            className={`mobile-nav-btn ${currentPage === 'dashboard' ? 'active' : ''}`}
+            onClick={() => handlePageChange('dashboard')}
+          >
+            <span className="nav-icon">📊</span>
+            Dashboard
+          </button>
+          
+          <button 
+            className={`mobile-nav-btn ${currentPage === 'transactions' ? 'active' : ''}`}
+            onClick={() => handlePageChange('transactions')}
+          >
+            <span className="nav-icon">💳</span>
+            Transactions
+          </button>
+          
+          <button 
+            className={`mobile-nav-btn ${currentPage === 'settings' ? 'active' : ''}`}
+            onClick={() => handlePageChange('settings')}
+          >
+            <span className="nav-icon">⚙️</span>
+            Settings
+          </button>
+          
+          {spreadsheetUrl && (
+            <a 
+              href={spreadsheetUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="mobile-nav-btn"
+              onClick={() => setMenuOpen(false)}
+            >
+              <span className="nav-icon">📄</span>
+              Open Google Sheet
+            </a>
+          )}
+          
+          <button 
+            className="mobile-nav-btn danger" 
+            onClick={handleSignOut}
+          >
+            <span className="nav-icon">🚪</span>
+            Sign Out
+          </button>
+        </div>
+      </nav>
+      
+      {/* Desktop Navigation */}
+      <nav className="nav desktop-nav">
         <div className="container nav-container">
           <button 
             className={`nav-btn ${currentPage === 'dashboard' ? 'active' : ''}`}
@@ -291,12 +386,14 @@ function App() {
           >
             📊 Dashboard
           </button>
+          
           <button 
             className={`nav-btn ${currentPage === 'transactions' ? 'active' : ''}`}
             onClick={() => setCurrentPage('transactions')}
           >
             💳 Transactions
           </button>
+          
           <button 
             className={`nav-btn ${currentPage === 'settings' ? 'active' : ''}`}
             onClick={() => setCurrentPage('settings')}
@@ -317,6 +414,7 @@ function App() {
         </div>
       </nav>
       
+      {/* Loading Overlay */}
       {loading && (
         <div className="loading-overlay">
           <div className="spinner"></div>
@@ -324,6 +422,7 @@ function App() {
         </div>
       )}
       
+      {/* Main Content */}
       <div className="container">
         {currentPage === 'dashboard' && (
           <Dashboard 
