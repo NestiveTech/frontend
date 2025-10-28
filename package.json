@@ -1,16 +1,15 @@
 {
   "name": "balance-sheet-app",
-  "version": "1.0.0",
+  "version": "5.0.0",
   "private": true,
-  "description": "Balance Sheet Manager with Google Sheets Backend",
-  "author": "NestiveTech",
-  "license": "MIT",
   "dependencies": {
     "@react-oauth/google": "^0.12.1",
+    "chart.js": "^4.5.1",
     "react": "^18.2.0",
+    "react-chartjs-2": "^5.3.1",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
-    "web-vitals": "^3.5.0"
+    "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -20,7 +19,8 @@
   },
   "eslintConfig": {
     "extends": [
-      "react-app"
+      "react-app",
+      "react-app/jest"
     ]
   },
   "browserslist": {
